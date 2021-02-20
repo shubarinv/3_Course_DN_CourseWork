@@ -91,7 +91,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   camera->ProcessMouseScroll(yoffset);
 }
 void renderScene(Shader *shader, std::vector<Mesh *> meshes, std::vector<Plane *> planes, bool shadowPass = true);
-void renderQuad(Shader *shader);
 
 int main(int argc, char *argv[]) {
   Application app({1280, 720}, argc, argv);
@@ -106,29 +105,6 @@ int main(int argc, char *argv[]) {
   lastX = app.getWindow()->getWindowSize().x / 2.0f;
   lastY = app.getWindow()->getWindowSize().y / 2.0f;
 
-  // shadows stuff
-  // configure depth map FBO
-  // -----------------------
-  const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-  unsigned int depthMapFBO;
-  glGenFramebuffers(1, &depthMapFBO);
-  // create depth texture
-  unsigned int depthMap;
-  glGenTextures(1, &depthMap);
-  glBindTexture(GL_TEXTURE_2D, depthMap);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  // attach depth texture as FBO's depth buffer
-  glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-  glDrawBuffer(GL_NONE);
-  glReadBuffer(GL_NONE);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  // end of shadows related stuff
   glCall(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
   Shader shader_shadow("shaders/shadow_shader.glsl", false);
@@ -216,7 +192,8 @@ int main(int argc, char *argv[]) {
   unsigned int cubemapTexture = CubeMapTexture::loadCubemap(faces);
 
   lightsManager = new LightsManager;
-  lightsManager->addLight(LightsManager::DirectionalLight("sun", {0, -5, -15}, {0.1, 0.1, 0.1}, {1, 0.9, 0.7}, {1, 1, 1}));
+ //
+   lightsManager->addLight(LightsManager::DirectionalLight("sun", {0, -5, -15}, {0.1, 0.1, 0.1}, {1, 0.9, 0.7}, {1, 1, 1}));
   //lightsManager->addLight(LightsManager::SpotLight("sun",{-2.0f, 0.0f, -1.0f},{0,0,0},{0.1,0.1,0.1},{1,1,1},{1,1,1},glm::cos(glm::radians(180.f)),180,1.0f,0.09f,0.032f));
 
   // camera
@@ -237,7 +214,7 @@ int main(int argc, char *argv[]) {
 
   meshes.push_back(new Mesh("resources/models/Rover.obj"));
   meshes.back()->compile();
-meshes.back()->setPosition({-95, -5.5, 45})->setScale({0.1,0.1,0.1});
+  meshes.back()->setPosition({-95, -5.5, 45})->setScale({0.1, 0.1, 0.1});
   meshes.push_back(new Mesh("resources/models/HDU_lowRez_part1.obj"));
   meshes.back()->compile()->setPosition({-150, -6, 25})->setScale({0.01, 0.01, 0.01});
   meshes.push_back(new Mesh("resources/models/HDU_lowRez_part1.obj"));
@@ -251,7 +228,7 @@ meshes.back()->setPosition({-95, -5.5, 45})->setScale({0.1,0.1,0.1});
 
   double lasttime = glfwGetTime();
   Mesh mro("resources/models/MRO.3ds");
-  mro.setPosition({0,400,0})->setOrigin(mro.position)->setRotation({0,0,90})->setScale({0.3,0.3,0.3});
+  mro.setPosition({0, 400, 0})->setOrigin(mro.position)->setRotation({0, 0, 90})->setScale({0.3, 0.3, 0.3});
   mro.compile();
   while (!app.getShouldClose()) {
 	app.getWindow()->updateFpsCounter();
@@ -260,17 +237,9 @@ meshes.back()->setPosition({-95, -5.5, 45})->setScale({0.1,0.1,0.1});
 	lastFrame = currentFrame;
 	moveCamera();
 	Renderer::clear({0, 0, 0, 1});
-
-
-	// 2. render scene as normal using the generated depth/shadow map
-	// --------------------------------------------------------------
-	glViewport(0, 0, app.getWindow()->getWindowSize().x, app.getWindow()->getWindowSize().y);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	shader_tex.bind();
 	camera->passDataToShader(&shader_tex);
 	lightsManager->passDataToShader(&shader_tex);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
 	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 	renderScene(&shader_tex, meshes, planes, false);
 	mro.draw(&shader_tex);
@@ -296,10 +265,10 @@ meshes.back()->setPosition({-95, -5.5, 45})->setScale({0.1,0.1,0.1});
 	  // TODO: Put the thread to sleep, yield, or simply do nothing
 	}
 	lasttime += 1.0 / 60;
-    mro.setPosition(mro.position+glm::vec3(6,0,6))->setOrigin(mro.position);
-	if(mro.position.x>2000){
-	  mro.position.x=-2000;
-	  mro.position.z=-2000;
+	mro.setPosition(mro.position + glm::vec3(6, 0, 6))->setOrigin(mro.position);
+	if (mro.position.x > 2000) {
+	  mro.position.x = -2000;
+	  mro.position.z = -2000;
 	}
   }
   glfwTerminate();

@@ -1,5 +1,5 @@
 #shader vertex
-#version 400 core
+#version 410 core
 
 layout (location = 0) in vec3 aPos;
 layout (location = 3) in vec3 aNormal;
@@ -23,7 +23,7 @@ void main()
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }
     #shader fragment
-    #version 400 core
+    #version 410 core
 
 out vec4 FragColor;
 
@@ -109,7 +109,7 @@ void main()
     // this fragment's final color.
     // == =====================================================
     // phase 1: directional lighting
-    vec3 result;
+    vec3 result=vec3(0);
     for (int i = 0; i < NUM_DIR_LIGHTS; i++)
     result += CalcDirLight(dirLights[i], norm, viewDir);
     // phase 2: point lights
